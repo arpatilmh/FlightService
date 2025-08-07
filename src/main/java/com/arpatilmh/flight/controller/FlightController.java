@@ -1,6 +1,7 @@
 package com.arpatilmh.flight.controller;
 
 import com.arpatilmh.flight.service.IFlightService;
+import com.arpatilmh.flight.service.ILlmService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,12 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 
 
 import java.util.*;
@@ -23,6 +19,9 @@ import java.util.*;
 public class FlightController {
     @Autowired
     private IFlightService flightService;
+
+    @Autowired
+    private ILlmService llmService;
 
     @GetMapping("/fastest-routes")
     public ResponseEntity<List<Map<String, Map<String, Integer>>>> getFastestRoutes(
@@ -36,32 +35,8 @@ public class FlightController {
 
     @GetMapping("/fastest-routes/nlp")
     public ResponseEntity<List<Map<String, Map<String, Integer>>>> getFastestRoutes(@RequestParam String nlpQuery) {
-        String apiKey = "";
-        String endpoint = "https://api.openai.com/v1/chat/completions";
-        nlpQuery += "Give me response in json format : { \"from\": \"<from>\", \"to\": \"<to>\", \"noOfFlight\": <number> }";
-        String requestBody = "{"
-                + "\"model\": \"gpt-3.5-turbo\","
-                + "\"messages\": [{\"role\": \"user\", \"content\": \"" + nlpQuery.replace("\"", "\\\"") + "\"}]"
-                + "}";
-
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + apiKey)
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .build();
-
-            HttpClient client = HttpClient.newHttpClient();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            // Parse OpenAI response
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(response.body());
-            String content = root.path("choices").get(0).path("message").path("content").asText();
-
-            // Parse the content as JSON
-            JsonNode contentJson = mapper.readTree(content);
+            JsonNode contentJson = llmService.getLlmResponse(nlpQuery, null);
             String from = contentJson.path("from").asText();
             String to = contentJson.path("to").asText();
             int noOfFlights = contentJson.path("noOfFlight").asInt();

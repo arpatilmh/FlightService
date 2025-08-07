@@ -21,6 +21,7 @@ public class InMemoryFlightRepository implements IFlightRepository {
 
     private final Map<String, Map<String, List<Flight>>> flightData;
     private final int MINUTES_IN_DAY = 24 * 60;
+    private final int LAYOVER_TIME = 120;
 
     @PostConstruct
     public void init() throws IOException, IOException {
@@ -84,10 +85,10 @@ public class InMemoryFlightRepository implements IFlightRepository {
                 for (Flight flight2 : flightsFromStopToTo) {
                     String cities = from + "_" + stop + "_" + to;
                     String codes = flight1.getFlightNumber() + "_" + flight2.getFlightNumber();
-                    if (flight1.getStart() + flight1.getDuration() + 120 >= MINUTES_IN_DAY) {
+                    if (flight1.getStart() + flight1.getDuration() + LAYOVER_TIME >= MINUTES_IN_DAY) {
                         // flight landed next day
-                        int flight1EndTimeNextDay = (flight1.getStart() + flight1.getDuration() + 120) % MINUTES_IN_DAY; // Adding 2 hours buffer
-                        if (flight1EndTimeNextDay <= flight2.getStart()) {
+                        int flight1EndTimeNextDay = (flight1.getStart() + flight1.getDuration() + LAYOVER_TIME) % MINUTES_IN_DAY;
+                        if (flight1EndTimeNextDay < flight2.getStart()) {
                             // If flight1 ends before or at the start of flight2 on the next day
                             int journeyDuration = MINUTES_IN_DAY - flight1.getStart() + flight2.getStart() + flight2.getDuration();
                             possibleRoutes.add(new Route(cities, codes, journeyDuration));
@@ -98,8 +99,8 @@ public class InMemoryFlightRepository implements IFlightRepository {
                         }
                     } else {
                         // flight landed on the same day
-                        int flight1EndTime = flight1.getStart() + flight1.getDuration() + 120;
-                        if (flight1EndTime <= flight2.getStart()) {
+                        int flight1EndTime = flight1.getStart() + flight1.getDuration() + LAYOVER_TIME;
+                        if (flight1EndTime < flight2.getStart()) {
                             int journeyDuration = flight2.getStart() + flight2.getDuration() - flight1.getStart();
                             possibleRoutes.add(new Route(cities, codes, journeyDuration));
                         } else {

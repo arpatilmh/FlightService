@@ -26,8 +26,8 @@ public class FlightServiceImpl implements IFlightService {
         List<Route> oneStopFlights = flightRepository.getFlightsOneStop(from, to);
         possibleRoutes.addAll(oneStopFlights);
 
-        Map<String, Map<String, Integer>> directRoutes = new HashMap<>();
-        Map<String, Map<String, Integer>> oneStopRoutes = new HashMap<>();
+        Map<String, Map<String, Integer>> directRoutes = new LinkedHashMap<>();
+        Map<String, Map<String, Integer>> oneStopRoutes = new LinkedHashMap<>();
         for(int i=0; i<noOfFlights; ) {
             if (possibleRoutes.isEmpty()) {
                 break;
